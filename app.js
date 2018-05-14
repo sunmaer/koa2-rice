@@ -5,9 +5,20 @@ const json = require('koa-json')
 const onerror = require('koa-onerror')
 const bodyparser = require('koa-bodyparser')
 const logger = require('koa-logger')
+const query = require('./mysql/db')
 
 const index = require('./routes/index')
 const users = require('./routes/users')
+
+// 测试数据库连接
+async function getUsers(sql) {
+  let data = await query(sql)
+  return data
+}
+
+getUsers('select * from user').then((res) => {
+  console.log(res)
+})
 
 // error handler
 onerror(app)
