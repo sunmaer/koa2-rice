@@ -7,18 +7,22 @@ const bodyparser = require('koa-bodyparser')
 const logger = require('koa-logger')
 const query = require('./mysql/db')
 
+const login = require('./routes/login')
 const index = require('./routes/index')
 const users = require('./routes/users')
 
-// 测试数据库连接
-async function getUsers(sql) {
-  let data = await query(sql)
-  return data
-}
-
-getUsers('select * from user').then((res) => {
-  console.log(res)
-})
+// app.all('*', (req, res, next) => {
+// 	res.header("Access-Control-Allow-Origin", req.headers.Origin || req.headers.origin || 'https://cangdu.org');
+// 	res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+// 	res.header("Access-Control-Allow-Methods", "PUT,POST,GET,DELETE,OPTIONS");
+//   res.header("Access-Control-Allow-Credentials", true); //可以带cookies
+// 	res.header("X-Powered-By", '3.2.1')
+// 	if (req.method == 'OPTIONS') {
+// 	  	res.send(200);
+// 	} else {
+// 	    next();
+// 	}
+// })
 
 // error handler
 onerror(app)
@@ -44,12 +48,13 @@ app.use(async (ctx, next) => {
 })
 
 // routes
+app.use(login.routes(), login.allowedMethods())
 app.use(index.routes(), index.allowedMethods())
 app.use(users.routes(), users.allowedMethods())
 
 // error-handling
 app.on('error', (err, ctx) => {
   console.error('server error', err, ctx)
-});
+})
 
 module.exports = app
