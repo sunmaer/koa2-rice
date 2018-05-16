@@ -2,6 +2,28 @@ const excuteQuery = require('../mysql/mysql')
 const responseObj = require('../modules/responseObj')
 
 const user = {
+  /** 
+   * 注册
+   * 
+   * @param {String} name 用户名
+   * @param {String} password 密码
+   * @param {String} telephone 手机号码
+   * @param {String} email 邮箱
+   * @return {Promise}
+   */
+  async register(name, password, telephone, email) {
+    if(!name || !password || !telephone || !email) {
+      return responseObj(0, '请填写完整信息', {})
+    }
+    return await excuteQuery(`INSERT INTO USER(name, password, telephone, email) VALUES ('${name}', '${password}', '${telephone}', '${email}')`).then((result) => {
+      if(result) {
+        return responseObj(1, '注册成功', {})
+      }
+    }).catch((err) => {
+      return responseObj(0, `注册失败 ${err}`, {})
+    })
+  },
+
   /**
    * 登录
    * 
