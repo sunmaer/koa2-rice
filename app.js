@@ -5,29 +5,14 @@ const json = require('koa-json')
 const onerror = require('koa-onerror')
 const bodyparser = require('koa-bodyparser')
 const logger = require('koa-logger')
-const query = require('./mysql/db')
+const chalk = require('chalk')
 
-const login = require('./routes/login')
-const index = require('./routes/index')
-const users = require('./routes/users')
+const routes = require('./router/routes')
 
-// app.all('*', (req, res, next) => {
-// 	res.header("Access-Control-Allow-Origin", req.headers.Origin || req.headers.origin || 'https://cangdu.org');
-// 	res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
-// 	res.header("Access-Control-Allow-Methods", "PUT,POST,GET,DELETE,OPTIONS");
-//   res.header("Access-Control-Allow-Credentials", true); //可以带cookies
-// 	res.header("X-Powered-By", '3.2.1')
-// 	if (req.method == 'OPTIONS') {
-// 	  	res.send(200);
-// 	} else {
-// 	    next();
-// 	}
-// })
-
-// error handler
+// 错误处理
 onerror(app)
 
-// middlewares
+// 加载中间件
 app.use(bodyparser({
   enableTypes:['json', 'form', 'text']
 }))
@@ -35,11 +20,19 @@ app.use(json())
 app.use(logger())
 app.use(require('koa-static')(__dirname + '/public'))
 
-app.use(views(__dirname + '/views', {
-  extension: 'pug'
-}))
+// 设置请求响应头
+app.use(async function(ctx, next) {
+  ctx.set("Access-Control-Allow-Origin", ctx.request.header.origin)
+  ctx.set("Access-Control-Allow-Credentials", true)
+  ctx.set("Access-Control-Allow-Methods", "OPTIONS, GET, PUT, POST, DELETE")
+  ctx.set("Access-Control-Allow-Headers", "x-requested-with, accept, origin, content-type")
+  if (ctx.request.method === "OPTIONS") {
+    ctx.response.status = 200
+  }
+  await next()
+})
 
-// logger
+// 打印日志信息
 app.use(async (ctx, next) => {
   const start = new Date()
   await next()
@@ -47,12 +40,10 @@ app.use(async (ctx, next) => {
   console.log(`${ctx.method} ${ctx.url} - ${ms}ms`)
 })
 
-// routes
-app.use(login.routes(), login.allowedMethods())
-app.use(index.routes(), index.allowedMethods())
-app.use(users.routes(), users.allowedMethods())
+// 路由
+app.use(routes.routes(), routes.allowedMethods())
 
-// error-handling
+// 错误处理
 app.on('error', (err, ctx) => {
   console.error('server error', err, ctx)
 })
