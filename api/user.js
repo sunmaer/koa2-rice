@@ -15,7 +15,7 @@ const user = {
     if(!name || !password || !telephone || !email) {
       return responseObj(0, '请填写完整信息', {})
     }
-    return await excuteQuery(`INSERT INTO USER(name, password, telephone, email) VALUES ('${name}', '${password}', '${telephone}', '${email}')`).then((result) => {
+    return await excuteQuery(`INSERT INTO USER(NAME, PASSWORD, TELEPHONE, EMAIL) VALUES ('${name}', '${password}', '${telephone}', '${email}')`).then((result) => {
       if(result) {
         return responseObj(1, '注册成功', {})
       }
