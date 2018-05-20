@@ -1,16 +1,10 @@
 const router = require('koa-router')()
-const user = require('../api/user')
+const user = require('../controllers/user/userController')
 
-// 注册
-router.post('/register', async(ctx, next) => {
-  let userObj = ctx.request.body
-  ctx.body = await user.register(userObj.name, userObj.password, userObj.telephone, userObj.email)
-})
-
-// 登录
-router.post('/login', async(ctx, next) => {
-  let userObj = ctx.request.body
-  ctx.body = await user.login(userObj.name, userObj.password)
-})
+/** 
+ * 用户模块
+ */
+router.post('/register', user.register) // 注册
+router.post('/login', user.login) // 登录
 
 module.exports = router
