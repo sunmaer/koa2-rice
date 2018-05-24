@@ -9,7 +9,7 @@ const chalk = require('chalk')
  * HSI 中心矩法提取图像颜色特征
  * 
  * @param {Object} img 图像像素矩阵
- * @return {Object} 颜色特征向量
+ * @return {Object} 图像颜色特征向量
  */
 function calculateColorFeature(img) {
   const width = img.width()
@@ -211,14 +211,59 @@ function calculateTextureFeature(img) {
   return M
 }
 
+/** 
+ * 形状不变矩法提取图像形状体征
+ * 
+ * @param {Object} img 图像像素矩阵
+ * @param {Object} 图像形状特征向量
+ */
+function calculateShapeFeature(img) {
+  const width = img.width()
+  const height = img.height()
+  let glcm = []
+  // 图像灰度化
+  for(let i=0; i<width; i++) {
+    glcm[i] = []
+    for(let j=0; j<height; j++) {
+      // 获取图像矩阵 RGB，OpenCV 中，RGB 图像的通道顺序为 BGR
+      let rgb = img.pixel(i, j)
+      let r = rgb[2]
+      let g = rgb[1]
+      let b = rgb[0]
+      glcm[i][j] = (0.3 * r + 0.59 * g + 0.11 * b)
+    }
+  }
+  // 中值滤波算法对图像进行平滑滤波
+  for(let i=1; i<width-1; i++) {
+    for(let j=1; j<height-1; j++) {
+      let arr = []
+      arr[0] = glcm[i-1, j-1]
+      arr[1] = glcm[i-1, j]
+      arr[2] = glcm[i-1, j+1]
+      arr[3] = glcm[i, j-1]
+      arr[4] = glcm[i, j]
+      arr[5] = glcm[i, j+1]
+      arr[6] = glcm[i+1, j-1]
+      arr[7] = glcm[i+1, j]
+      arr[8] = glcm[i+1, j+1]
+      // 3*3 窗口的像素值进行排序取中间值
+      arr.sort(function(a, b) {
+        return a - b
+      })
+      glcm[i][j] = arr[4]
+    }
+  }
+  console.log(glcm)
+}
+
 // 测试 DEMO
-// cv.readImage(path.resolve(__dirname, '../public/images/riceBlast/50.jpg'), (err, img) => {
-//   if(err) {
-//     console.log(chalk.red(err))
-//   } else {
-//     console.log(calculateTextureFeature(img))
-//   }
-// })
+cv.readImage(path.resolve(__dirname, '../public/images/riceBlast/50.jpg'), (err, img) => {
+  if(err) {
+    console.log(chalk.red(err))
+  } else {
+    console.log(calculateShapeFeature(img))
+  }
+})
 
 module.exports = {
   color: calculateColorFeature,
