@@ -21,7 +21,7 @@ fs.readdir(path.resolve(__dirname, '../public/images/'), (err, files) => {
       // 分别读取三种病斑图像文件夹
       fs.readdir(path.resolve(__dirname, `../public/images/${file}`), (err, files) => {
         if(err) return console.log(err)
-        let arr = [], total = 0
+        let colorArr = [], textureArr = [], total = 0
         files.forEach((img) => {
           if(img !== '.DS_Store') {
             // 读取图像像素矩阵
@@ -31,14 +31,21 @@ fs.readdir(path.resolve(__dirname, '../public/images/'), (err, files) => {
               } else {
                 total ++
                 feature.color(img).forEach((v, i) => {
-                  arr[i] = arr[i] === void 0 ? 0 : arr[i] + v
+                  colorArr[i] = colorArr[i] === void 0 ? 0 : colorArr[i] + v
+                })
+                feature.texture(img).forEach((v, i) => {
+                  textureArr[i] = textureArr[i] === void 0 ? 0 : textureArr[i] + v
                 })
               }
             })
           }
         })
         // 计算每一类病害图像的平均颜色特征向量并存入数据库
-        arr = arr.map((v) => {
+        colorArr = colorArr.map((v) => {
+          return v / total
+        })
+        // 纹理特征
+        textureArr = textureArr.map((v) => {
           return v / total
         })
         let name = ''
@@ -50,12 +57,19 @@ fs.readdir(path.resolve(__dirname, '../public/images/'), (err, files) => {
           name = '纹枯病'
         }
         try {
-          excuteQuery(`INSERT INTO IMAGE_COLOR(NAME, HM1, HM2, HM3, SM1, SM2, SM3, IM1, IM2, IM3) VALUES ('${name}', ${arr[0]}, ${arr[1]}, ${arr[2]}, ${arr[3]}, ${arr[4]}, ${arr[5]}, ${arr[6]}, ${arr[7]}, ${arr[8]})`).then((res) => {
+          excuteQuery(`INSERT INTO IMAGE_COLOR(NAME, HM1, HM2, HM3, SM1, SM2, SM3, IM1, IM2, IM3) VALUES ('${name}', ${colorArr[0]}, ${colorArr[1]}, ${colorArr[2]}, ${colorArr[3]}, ${colorArr[4]}, ${colorArr[5]}, ${colorArr[6]}, ${colorArr[7]}, ${colorArr[8]})`).then((res) => {
             if(res) {
-              console.log(chalk.green(`${name}特征值写入数据库成功`))
+              console.log(chalk.green(`${name}颜色特征值写入数据库成功`))
             }
           }).catch((err) => {
-          console.log(chalk.red(`${name}特征值写入数据库失败 ${err}`))            
+          console.log(chalk.red(`${name}颜色特征值写入数据库失败 ${err}`))            
+          })
+          excuteQuery(`INSERT INTO IMAGE_TEXTURE(NAME, M0, M1, M2, M3, M4, M5, M6, M7) VALUES ('${name}', ${textureArr[0]}, ${textureArr[1]}, ${textureArr[2]}, ${textureArr[3]}, ${textureArr[4]}, ${textureArr[5]}, ${textureArr[6]}, ${textureArr[7]})`).then((res) => {
+            if(res) {
+              console.log(chalk.green(`${name}纹理特征值写入数据库成功`))
+            }
+          }).catch((err) => {
+          console.log(chalk.red(`${name}纹理特征值写入数据库失败 ${err}`))            
           })
         } catch(err) {
           console.log(chalk.red(`${name}特征值写入数据库失败 ${err}`))
