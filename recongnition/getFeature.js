@@ -234,23 +234,61 @@ function calculateShapeFeature(img) {
     }
   }
   // 中值滤波算法对图像进行平滑滤波
-  for(let i=1; i<width-1; i++) {
-    for(let j=1; j<height-1; j++) {
+  for(let i=1; i<5; i++) {
+    for(let j=1; j<5; j++) {
       let arr = []
-      arr[0] = glcm[i-1, j-1]
-      arr[1] = glcm[i-1, j]
-      arr[2] = glcm[i-1, j+1]
-      arr[3] = glcm[i, j-1]
-      arr[4] = glcm[i, j]
-      arr[5] = glcm[i, j+1]
-      arr[6] = glcm[i+1, j-1]
-      arr[7] = glcm[i+1, j]
-      arr[8] = glcm[i+1, j+1]
+      arr[0] = glcm[i-1][j-1]
+      arr[1] = glcm[i-1][j]
+      arr[2] = glcm[i-1][j+1]
+      arr[3] = glcm[i][j-1]
+      arr[4] = glcm[i][j]
+      arr[5] = glcm[i][j+1]
+      arr[6] = glcm[i+1][j-1]
+      arr[7] = glcm[i+1][j]
+      arr[8] = glcm[i+1][j+1]
       // 3*3 窗口的像素值进行排序取中间值
       arr.sort(function(a, b) {
         return a - b
       })
       glcm[i][j] = arr[4]
+    }
+  }
+  // sobel 算子对图像进行锐化
+  for (let i = 1; i < width-1; i++) {
+    for (let j = 1; j < height-1; j++) {
+      let x = (-1)*glcm[i-1][j-1] + (-2)*glcm[i][j-1] + (-1)*glcm[i+1][j-1] + 
+                glcm[i-1][j+1] + 2*glcm[i][j+1] + glcm[i+1][j+1]
+      let y = (-1)*glcm[i-1][j-1] + (-2)*glcm[i-1][j] + (-1)*glcm[i-1][j+1] + 
+                glcm[i+1][j-1] + 2*glcm[i+1][j] + glcm[i+1][j+1]
+      let temp = Math.abs(x) + Math.abs(y)
+      if (temp > 255) {
+        temp = 255
+      }
+      glcm[i][j] = temp
+    }
+  }
+  // 图像用迭代阈值法进行二值化
+  let t1, t2 = 100, t0 = 1
+  do {
+    t1 = t2
+    let G1 = G2 = G1Num = G2Num = 0
+    for(let i=0; i<width; i++) {
+      for(let j=0; j<height; j++) {
+        if(glcm[i][j] <= t1) {
+          G1 += glcm[i][j]
+          G1Num++
+        } else {
+          G2 += glcm[i][j]
+          G2Num++
+        }
+      }
+    }
+    let u1 = G1 / G1Num, u2 = G2 / G2Num
+    t2 = (u1 + u2) / 2
+  } while(Math.abs(t1 - t2) > t0)
+  for(let i=0; i<width; i++) {
+    for(let j=0; j<height; j++) {
+      glcm[i][j] = glcm[i][j] >= t2 ? 1 : 0
     }
   }
   console.log(glcm)
