@@ -291,19 +291,81 @@ function calculateShapeFeature(img) {
       glcm[i][j] = glcm[i][j] >= t2 ? 1 : 0
     }
   }
-  console.log(glcm)
+  // 计算图像的 Hu 不变矩
+  let m00=0, m11=0, m20=0,  m02=0, m30=0, m03=0, m12=0, m21=0 //中心矩
+  let u20=0, u02=0, u11=0, u30=0, u03=0, u12=0, u21=0 //规范化后的中心矩
+  let ht1=0, ht2=0, ht3=0, ht4=0, ht5=0 //临时变量
+  let _x=0, _y=0 //重心
+
+  // 获得图像的区域中心（普通矩）
+  let s10 = 0, s01 = 0, s00 = 0 // 0阶矩和1阶矩
+  for(let i=0; i<width; i++) {
+    for(let j=0; j<height; j++) {
+      if(glcm[i][j] === 0) {
+        s00 += 1
+        s01 += j
+        s10 += 0
+      } else {
+        s00 += 1
+        s01 += j
+        s10 += i
+      }
+    }
+  }
+  _x = s10 / s00
+  _y = s01 / s00
+  // 计算二阶、三阶矩（中心矩）
+  m00 = s00
+  for(let i=0; i<width; i++) {
+    for(let j=0; j<height; j++) {
+      if(glcm[i][j] !== 0) {
+        m11 += (i - _x) * (j - _y)
+        m20 += (i - _x) * (i - _x)
+        m02 += (j - _y) * (j - _y)
+        m30 += Math.pow(i - _x, 3)
+        m03 += Math.pow(j - _y, 3)
+        m12 += (i - _x) * Math.pow(j - _y, 2)
+        m21 += Math.pow(i - _x, 2) * (j - _y)
+      }
+    }
+  }
+  // 计算规范化后的中心矩
+  u20 = (m20 / Math.pow(m00, 2))
+  u02 = (m02 / Math.pow(m00, 2))
+  u11 = (m11 / Math.pow(m00, 2))
+  u30 = (m30 / Math.pow(m00, 2.5))
+  u03 = (m03 / Math.pow(m00, 2.5))
+  u12 = (m12 / Math.pow(m00, 2.5))
+  u21 = (m21 / Math.pow(m00, 2.5))
+  // 计算中间变量
+  ht1 = (u20 - u02)
+  ht2 = (u30 - 3*u12)
+  ht3 = (3*u21 - u03)
+  ht4 = (u30 + u12)
+  ht5 = (u21 + u03)
+  // 计算不变矩
+  let M = []
+  M[0]=(u20 + u02)
+  M[1]=(ht1 * ht1 + 4 * u11 * u11)
+  M[2]=(ht2 * ht2 + ht3 * ht3)
+  M[3]=(ht4 * ht4 + ht5 * ht5)
+  M[4]=(ht2 * ht4 * (ht4 * ht4 - 3 * ht5 * ht5) + ht3 * ht5 * (3 * ht4 * ht4 - ht5 * ht5))
+  M[5]=(ht1 * (ht4 * ht4 - ht5 * ht5) + 4 * u11 * ht4 * ht5)
+  M[6]=(ht3 * ht4 * (ht4 * ht4 - 3 * ht5 * ht5) - ht2 * ht5 * (3 * ht4 * ht4 - ht5 * ht5))
+  return M
 }
 
 // 测试 DEMO
-cv.readImage(path.resolve(__dirname, '../public/images/riceBlast/50.jpg'), (err, img) => {
-  if(err) {
-    console.log(chalk.red(err))
-  } else {
-    console.log(calculateShapeFeature(img))
-  }
-})
+// cv.readImage(path.resolve(__dirname, '../public/images/riceBlast/50.jpg'), (err, img) => {
+//   if(err) {
+//     console.log(chalk.red(err))
+//   } else {
+//     console.log(calculateShapeFeature(img))
+//   }
+// })
 
 module.exports = {
   color: calculateColorFeature,
-  texture: calculateTextureFeature
+  texture: calculateTextureFeature,
+  shape: calculateShapeFeature
 }
